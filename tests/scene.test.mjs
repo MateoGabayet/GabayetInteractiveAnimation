@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {advance,DEFAULTS,newShape,parseComposition,validColor} from '../lib/scene.ts';
+const ids=new Set(['original']);
+test('forms bounce within normalized stage bounds',()=>{const s={...newShape('original','#123456'),x:.999,y:.001,vx:.2,vy:-.2};advance(s,.05,DEFAULTS,1);assert.equal(s.x,1);assert.equal(s.y,0);assert.ok(s.vx<0&&s.vy>0);});
+test('sound response changes motion without changing individual colours',()=>{const s=newShape('original','#aabbcc');const quiet={...s},loud={...s};advance(quiet,.01,DEFAULTS,0);advance(loud,.01,DEFAULTS,1);assert.ok(Math.abs(loud.x-s.x)>Math.abs(quiet.x-s.x));assert.equal(loud.color,'#aabbcc');});
+test('composition round trip preserves asset, colour, position and controls',()=>{const raw={version:1,name:'Set 01',controls:{...DEFAULTS},shapes:[newShape('original','#f01234')]};const result=parseComposition(JSON.parse(JSON.stringify(raw)),ids);assert.equal(result.shapes[0].color,'#f01234');assert.equal(result.shapes[0].x,raw.shapes[0].x);assert.notEqual(result.shapes[0].id,raw.shapes[0].id);assert.deepEqual(result.controls,raw.controls);});
+test('untrusted imports reject unknown assets and unsafe values',()=>{const raw={version:1,name:'X',controls:{...DEFAULTS},shapes:[newShape('missing','#123456')]};assert.throws(()=>parseComposition(raw,ids));raw.shapes=[newShape('original','#123456')];raw.controls.speed=Infinity;assert.throws(()=>parseComposition(raw,ids));assert.equal(validColor('url(https://example.com)'),false);});
+test('oversized compositions and out-of-bounds coordinates are rejected',()=>{const s=newShape('original','#123456');assert.throws(()=>parseComposition({version:1,controls:DEFAULTS,shapes:Array(1201).fill(s)},ids));assert.throws(()=>parseComposition({version:1,controls:DEFAULTS,shapes:[{...s,x:NaN}]},ids));});

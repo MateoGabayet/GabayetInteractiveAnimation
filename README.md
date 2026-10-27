@@ -1,36 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gabayet Live Visual Studio
 
-## Getting Started
+A Next.js performance studio using 2,813 of Mateo Gabayet's processed stencil SVGs.
 
-First, run the development server:
+## Run
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+`npm ci` then `npm run dev`. Visit `/gallery`. `npm run build` creates the production build.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Browse/search/shuffle the processed archive. Each tile has a colour fill; choose a colour and add three independently coloured forms to the stage.
+- VJ controls: speed, rotation, size, opacity, density, auto-spawn rate, background and warm/cool/full-spectrum random palettes. Forms expire after 15 minutes. Stage caps are 1,200 desktop / 240 mobile; default density is deliberately lower.
+- Microphone audio is analysed locally with Web Audio (volume and low-frequency energy). Enable explicitly with the microphone button. This is energy response, not BPM estimation.
+- Canvas video recording: 30 fps, WebM or MP4 according to browser support. Microphone audio is included only when already enabled at recording start. Finish with Stop & download. Navigating back to the archive stops the recording.
+- Save up to 20 named compositions in browser localStorage. Export/import JSON for portable backups. Imported values, colours, asset identifiers and shape limits are validated.
+- Live audience participation: start Audience QR on the host Stage, scan from another device, choose a form and send it. PeerJS Cloud supplies WebRTC signalling. Keep the host open; no durable room/server/database is needed. Some restrictive networks require the same Wi-Fi or a hotspot. Host can pause/end contributions, and input is validated and rate-limited per connection. Microphone audio is never transmitted to guests.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Assets
 
-## Learn More
+`public/stencils/*.svg.gz` contains gzip-compressed SVG files; `lib/stencils.json` is the catalogue. The browser decompresses the files with DecompressionStream, rasterizes the original vector paths and applies per-instance colour. Closed path geometry and transforms are preserved; outline-only fills are restored to black before tinting. Original source files are unchanged. Loading is on demand, with bounded caches; SVGs are not all loaded up front.
 
-To learn more about Next.js, take a look at the following resources:
+The preparation script accepts the processed SVG source directory as an argument. It is not needed at runtime. Existing legacy SVG directories are retained only as historical source, and are no longer used by the gallery.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Validation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`node --experimental-strip-types --test tests/scene.test.mjs` covers bounce behaviour, audio response, per-shape colours, import round-trips, invalid payloads and caps. Run `npm run build` for type and production route checks.

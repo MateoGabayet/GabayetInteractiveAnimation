@@ -1,7 +1,8 @@
 from pathlib import Path
-import json,gzip,xml.etree.ElementTree as ET,hashlib
+import json,gzip,xml.etree.ElementTree as ET,hashlib,sys
 from concurrent.futures import ThreadPoolExecutor
-SRC=Path('/Users/mateogabayet/Documents/Codex/2026-10-21/i-x20/outputs/Stencil Outlines')
+if len(sys.argv)!=2:raise SystemExit('Usage: python3 scripts/prepare-stencils.py /path/to/processed-svg-folder')
+SRC=Path(sys.argv[1])
 OUT=Path('public/stencils');OUT.mkdir(exist_ok=True)
 NS='http://www.w3.org/2000/svg';ET.register_namespace('',NS)
 def convert(p):
