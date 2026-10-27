@@ -6,6 +6,7 @@ export type Controls = {
     density: number;
     reactivity: number;
     background: string;
+    backgroundReactive: boolean;
     auto: boolean;
     rate: number;
     palette: string;
@@ -28,8 +29,9 @@ export type Composition = {
     controls: Controls;
     shapes: Shape[];
 };
-export const DEFAULTS: Controls = { speed: 1, rotation: 1, size: 160, opacity: .75, density: 180, reactivity: 1, background: '#F9F6EE', auto: false, rate: 2, palette: 'spectrum' };
-export function randomColor(palette = 'spectrum') { const hues = palette === 'warm' ? [0, 18, 35, 48] : palette === 'cool' ? [165, 190, 215, 260] : [Math.random() * 360]; return `hsl(${hues[Math.floor(Math.random() * hues.length)]} 85% 52%)`; }
+export const DEFAULTS: Controls = { speed: 1, rotation: 1, size: 160, opacity: .75, density: 180, reactivity: 1, background: '#F9F6EE', backgroundReactive: false, auto: false, rate: 2, palette: 'spectrum' };
+export const PALETTES: Record<string, number[]> = { spectrum: [], warm: [0, 18, 35, 48], cool: [165, 190, 215, 260], neon: [75, 145, 185, 295, 325], sunset: [0, 20, 40, 315, 335], ocean: [165, 180, 195, 210, 225], forest: [75, 105, 130, 155], violet: [245, 265, 280, 300, 320], pastel: [30, 90, 160, 210, 280, 330], monochrome: [0] };
+export function randomColor(palette = 'spectrum') { const hues = PALETTES[palette] || []; const h = hues.length ? hues[Math.floor(Math.random() * hues.length)] : Math.random() * 360; return `hsl(${h} 85% 52%)`; }
 export function newShape(asset: string, color: string): Shape { return { id: crypto.randomUUID(), asset, color, x: Math.random(), y: Math.random(), vx: (Math.random() > .5 ? 1 : -1) * (.025 + Math.random() * .055), vy: (Math.random() > .5 ? 1 : -1) * (.025 + Math.random() * .055), angle: Math.random() * Math.PI * 2, spin: (Math.random() - .5) * 1.5, born: Date.now() }; }
 export function advance(s: Shape, dt: number, c: Controls, energy: number) { const speed = c.speed * (1 + energy * c.reactivity * 3); s.x += s.vx * dt * speed; s.y += s.vy * dt * speed; if (s.x < 0 || s.x > 1) {
     s.x = Math.max(0, Math.min(1, s.x));
@@ -50,11 +52,11 @@ export function parseComposition(raw: unknown, assets: Set<string>): Composition
         if (!finite(c[key], min, max))
             throw Error('Invalid control values.');
     }
-    if (!/^#[0-9a-f]{6}$/i.test(c.background) || !['spectrum', 'warm', 'cool'].includes(c.palette) || typeof c.auto !== 'boolean')
+    if (!/^#[0-9a-f]{6}$/i.test(c.background) || !Object.hasOwn(PALETTES, c.palette) || typeof c.auto !== 'boolean')
         throw Error('Invalid palette.');
     for (const s of d.shapes) {
         if (!s || !assets.has(s.asset) || !validColor(s.color) || !finite(s.x, 0, 1) || !finite(s.y, 0, 1) || !finite(s.vx, -1, 1) || !finite(s.vy, -1, 1) || !finite(s.angle, -1e8, 1e8) || !finite(s.spin, -10, 10))
             throw Error('Invalid shape in composition.');
     }
-    return { version: 1, name: typeof d.name === 'string' ? d.name.slice(0, 80) : 'Untitled', controls: { ...c }, shapes: d.shapes.map(s => ({ ...s, id: crypto.randomUUID(), born: Date.now() })) };
+    return { version: 1, name: typeof d.name === 'string' ? d.name.slice(0, 80) : 'Untitled', controls: { ...DEFAULTS, ...c, backgroundReactive: c.backgroundReactive === true }, shapes: d.shapes.map(s => ({ ...s, id: crypto.randomUUID(), born: Date.now() })) };
 }
