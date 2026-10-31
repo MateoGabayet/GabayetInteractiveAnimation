@@ -7,6 +7,8 @@ export type Controls = {
     reactivity: number;
     background: string;
     backgroundReactive: boolean;
+    backgroundAuto: boolean;
+    backgroundSpeed: number;
     auto: boolean;
     rate: number;
     palette: string;
@@ -29,7 +31,7 @@ export type Composition = {
     controls: Controls;
     shapes: Shape[];
 };
-export const DEFAULTS: Controls = { speed: 1, rotation: 1, size: 160, opacity: .75, density: 180, reactivity: 1, background: '#F9F6EE', backgroundReactive: false, auto: false, rate: 2, palette: 'spectrum' };
+export const DEFAULTS: Controls = { speed: 1, rotation: 1, size: 160, opacity: .75, density: 180, reactivity: 1, background: '#F9F6EE', backgroundReactive: false, backgroundAuto: false, backgroundSpeed: .5, auto: false, rate: 2, palette: 'spectrum' };
 export const PALETTES: Record<string, number[]> = { spectrum: [], warm: [0, 18, 35, 48], cool: [165, 190, 215, 260], neon: [75, 145, 185, 295, 325], sunset: [0, 20, 40, 315, 335], ocean: [165, 180, 195, 210, 225], forest: [75, 105, 130, 155], violet: [245, 265, 280, 300, 320], pastel: [30, 90, 160, 210, 280, 330], monochrome: [0] };
 export function randomColor(palette = 'spectrum') { const hues = PALETTES[palette] || []; const h = hues.length ? hues[Math.floor(Math.random() * hues.length)] : Math.random() * 360; return `hsl(${h} 85% 52%)`; }
 export function newShape(asset: string, color: string): Shape { return { id: crypto.randomUUID(), asset, color, x: Math.random(), y: Math.random(), vx: (Math.random() > .5 ? 1 : -1) * (.025 + Math.random() * .055), vy: (Math.random() > .5 ? 1 : -1) * (.025 + Math.random() * .055), angle: Math.random() * Math.PI * 2, spin: (Math.random() - .5) * 1.5, born: Date.now() }; }
@@ -54,6 +56,7 @@ export function parseComposition(raw: unknown, assets: Set<string>): Composition
     }
     if (!/^#[0-9a-f]{6}$/i.test(c.background) || !Object.hasOwn(PALETTES, c.palette) || typeof c.auto !== 'boolean')
         throw Error('Invalid palette.');
+    if ((c.backgroundAuto !== undefined && typeof c.backgroundAuto !== 'boolean') || (c.backgroundSpeed !== undefined && !finite(c.backgroundSpeed, .1, 3))) throw Error('Invalid background controls.');
     for (const s of d.shapes) {
         if (!s || !assets.has(s.asset) || !validColor(s.color) || !finite(s.x, 0, 1) || !finite(s.y, 0, 1) || !finite(s.vx, -1, 1) || !finite(s.vy, -1, 1) || !finite(s.angle, -1e8, 1e8) || !finite(s.spin, -10, 10))
             throw Error('Invalid shape in composition.');
