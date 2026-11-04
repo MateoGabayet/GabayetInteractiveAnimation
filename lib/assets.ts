@@ -2,7 +2,9 @@ import entries from './stencils.json';
 export const STENCILS = entries;
 export const ASSET_IDS = new Set(entries.map(s => s.id));
 const cache = new Map<string, Promise<HTMLImageElement>>();
-export function loadStencil(id: string) { let p = cache.get(id); if (p)
+export function loadStencil(id: string) {
+    if (!ASSET_IDS.has(id)) return Promise.reject(new Error('Unknown stencil.'));
+    let p = cache.get(id); if (p)
     return p; p = (async () => { const response = await fetch(`/stencils/${id}.svg.gz`); if (!response.ok || !response.body)
     throw Error('Could not load stencil.'); const bytes = await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).text(); const url = URL.createObjectURL(new Blob([bytes], { type: 'image/svg+xml' })); try {
     return await new Promise<HTMLImageElement>((resolve, reject) => { const img = new Image(); img.onload = () => resolve(img); img.onerror = () => reject(Error('Invalid stencil image.')); img.src = url; });

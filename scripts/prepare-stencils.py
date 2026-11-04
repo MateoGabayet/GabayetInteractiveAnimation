@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 if len(sys.argv)!=2:raise SystemExit('Usage: python3 scripts/prepare-stencils.py /path/to/processed-svg-folder')
 SRC=Path(sys.argv[1])
 OUT=Path('public/stencils');OUT.mkdir(exist_ok=True)
+EXCLUDED = set((Path(__file__).resolve().parents[1] / 'stencil-exclusions.txt').read_text().splitlines())
 NS='http://www.w3.org/2000/svg';ET.register_namespace('',NS)
 def convert(p):
  root=ET.fromstring(p.read_bytes());root.set('fill','#000');root.set('stroke','none')
@@ -13,6 +14,7 @@ def convert(p):
  data=ET.tostring(root,encoding='utf-8');id=hashlib.sha256(p.name.encode()).hexdigest()[:16]
  (OUT/(id+'.svg.gz')).write_bytes(gzip.compress(data,compresslevel=9,mtime=0))
  return {'id':id,'name':p.name.rsplit('.',2)[0],'source':p.name,'viewBox':root.get('viewBox')}
-with ThreadPoolExecutor(max_workers=8) as pool:items=list(pool.map(convert,sorted(SRC.glob('*.svg'))))
+sources = sorted(p for p in SRC.glob('*.svg') if p.name.split('.')[0] not in EXCLUDED)
+with ThreadPoolExecutor(max_workers=8) as pool:items=list(pool.map(convert,sources))
 Path('lib/stencils.json').write_text(json.dumps(items,separators=(',',':')))
 print(len(items),'SVGs prepared;',sum(p.stat().st_size for p in OUT.glob('*'))//1024//1024,'MiB compressed')
